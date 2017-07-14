@@ -1,0 +1,48 @@
+Domain Services:
+-----------------------------
+DC -> Server manager -> Add roles and features -> Active Directory Domain Services
+Yellow exclamation -> promote this server to a domain controller -> add a new forest – DOMAIN.ORG
+SERVER2 -> system, change settings, domain -> DOMAIN.ORG (use DNS IP address from DC [ncpa.cpl])
+
+Secondary DNS on SERVER2:
+-----------------------------
+SERVER2 -> DNS -> Forward Lookup Zone -> Secondary zone -> IP address from DC
+DC -> DNS -> Forward Lookup Zone -> Propertis -> Zone Transfers -> Allow, Name Servers -> Add -> IP address from SERVER2 
+SERVER2 -> DNS -> Transfer zone from Master
+
+Reverse Lookup DNS Zone for 172.16.0.0 /24 range:
+--------------------------------------------------------------
+DC -> DNS -> Reverse Lookup Zone -> Primary zone -> To all DNS servers running on domain controllers in this domain -> Ipv4 -> Network ID: 172.16.0 -> Do not allow dynamic updates 
+
+On DC configure DHCP server with following settings:
+--------------------------------------------------------------
+Pool from 172.16.0.1 – 254, DNS servers are DC and SERVER2, without default gateway
+Make DHCP reservation for CLIENT Computer and exclusion range for DC/SERVER2
+
+DC -> DHCP -> Ipv4 -> New Scope -> Make range -> in exclusions write addresses from DC/SERVER2 -> On DNS addresses write addresses from DC and SERVER2 -> Activate scope now
+
+Reservation -> New -> write MAC address from CLIENT PC and CLIENT PC IP address
+
+Right click on scope -> propertis -> DNS -> Checkmark on Dynamically update DNS records for DHCP clients that do not request updates
+
+Make users: student1, student2, student3 and student4. Make groups DocAdmins and DocUsers. Users student1 student3 add to group DocAdmins and student2 and student4 add to group DocUsers. 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+DC -> Active Directory Users And Computers -> Users -> add new user, for groups add new group, right click on user and add to group
+
+On SERVER2 make shared folder with name Documents. Make following rights for this folder:
+Group DocAdmins must have full rights of access;
+Group DocUsers must have only read and write access;
+Both groups must be in OU-a Documentum. Make deletion of OU Documentum forbidden
+On shared folder Documents set ABE (Access Based Enumeration).
+Server Manager -> File and Storage Services -> Shares -> New share -> Type a custom path and make new folder which will be share -> click on checkbox enable access-based enumeration -> customize permissions (?)-> finish 
+
+Active directory users and computers -> right click on domain -> new organizational unit -> click checkbox on protection of accidental delete -> Documentum -> move newly created groups DocUsers and DocAdmins in that OU
+
+On CLIENT computer make network drive W: which will map shared folder Documents on SERVER2. Must be available after restart.
+
+Check if share working on CLIENT computer -> cmd -> net use w: \\SERVER\share /P:yes
+
+On SERVER2 install role File Server Resource Manager and in selected folder configure deny policy for mkv files (File Screening).
+
+Server manager -> next -> File server -> file server resource manager -> install
+File server resource manager -> File screens -> create file screen -> select folder -> derive propertis from this file screen template -> define custom file screen propertis -> make only .mkv format and create
